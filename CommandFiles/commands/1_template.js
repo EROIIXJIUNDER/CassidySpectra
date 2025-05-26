@@ -1,7 +1,7 @@
 // @ts-check
 
 // This is a command template!
-// Make a new file, copy+paste, and modify!
+// Make a new file,copy+paste,and modify!
 
 export default easyCMD({
   name: "hello",
