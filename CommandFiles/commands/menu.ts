@@ -413,7 +413,7 @@ export async function entry({
     }**\n`;
     result += `${UNISpectra.arrow} Command details: **${prefix}${commandName} <command>**\n`;
 
-    const resultStr = `🔍 | **Available Commands** 🧰 (${commands.size})\n\n${result}${UNISpectra.charm} Developed by @**Liane Cagara** 🎀`;
+    const resultStr = `🔍 | **Available Commands** 🧰 (${commands.size})\n\n${result}${UNISpectra.charm} Developed by @**Asmit Adk** 💀`;
     return output.reply(resultStr);
   } else {
     const basicCommands = {
