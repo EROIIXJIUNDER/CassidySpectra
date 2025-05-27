@@ -56,7 +56,7 @@
   "autoCreateDB": false,
   "MongoConfig": {
     "status": true,
-    "uri": "MONGO_URI",
+    "uri": "mongodb+srv://zenopubg:zeno@11@erick.afyort1.mongodb.net/",
     "note": "DO NOT MODIFY THIS IF YOU DO NOT KNOW WHAT YOU WERE DOING. They serve as .env keys for mongo uri."
   },
   "credentials": {
