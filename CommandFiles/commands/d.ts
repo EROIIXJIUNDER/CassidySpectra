@@ -1,34 +1,19 @@
-import { getFbVideoInfo } from "fb-downloader-scrapper";
+import axios from "axios";
 
 export const meta: CassidySpectra.CommandMeta = {
   name: "autodl",
   description:
-    "Autodownloader for Facebook videos. Automatically detects and downloads media from Facebook URLs. Upcoming support: Spotify, YouTube, YouTube Music, Twitter, and Instagram.",
+    "Auto-downloads videos from TikTok, YouTube, Facebook, Instagram, Twitter, and more. Replies with the downloaded video.",
   version: "1.0.0",
-  author: "0xVoid",
+  author: "Asmit Adk",
   requirement: "2.5.0",
   icon: "📥",
   category: "Media",
-  role: 1,
+  role: 0,
   noWeb: true,
 };
 
-function formatDuration(durationMs: number) {
-  const units = [
-    { unit: "hr", factor: 3600000 },
-    { unit: "min", factor: 60000 },
-    { unit: "sec", factor: 1000 },
-    { unit: "ms", factor: 1 },
-  ];
-  for (const { unit, factor } of units) {
-    if (durationMs >= factor) {
-      const value = durationMs / factor;
-      return `${value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)} ${unit}`;
-    }
-  }
-  return "0 ms";
-}
-
+// Toggle command: !autodl on/off
 export async function entry({
   output,
   input,
@@ -36,50 +21,58 @@ export async function entry({
   args,
 }: CommandContext) {
   if (!input.isAdmin) {
-    return output.reply("You cannot enable/disable this feature.");
+    return output.reply("Only admins can enable or disable this feature.");
   }
-  const isEna = (await threadsDB.queryItem(input.threadID, "autodl"))?.autodl;
-  let choice =
-    args[0] === "on" ? true : args[0] === "off" ? false : isEna ? !isEna : true;
-  await threadsDB.setItem(input.threadID, {
-    autodl: choice,
-  });
 
-  return output.reply(`✅ ${choice ? "Enabled" : "Disabled"} successfully!`);
+  const current = (await threadsDB.queryItem(input.threadID, "autodl"))?.autodl;
+  const toggle = args[0] === "on" ? true : args[0] === "off" ? false : !current;
+
+  await threadsDB.setItem(input.threadID, { autodl: toggle });
+
+  return output.reply(`✅ Auto Downloader is now **${toggle ? "ENABLED" : "DISABLED"}**.`);
 }
 
+// Event handler: triggered on every message
 export async function event({ output, input, threadsDB }: CommandContext) {
   try {
     const cache = await threadsDB.getCache(input.threadID);
-    if (cache.autodl === false) {
+    if (cache.autodl === false) return;
+
+    const body = String(input);
+    const urlRegex = /https:\/\/(vt\.tiktok\.com|www\.tiktok\.com|youtu\.be|youtube\.com|www\.facebook\.com|fb\.watch|x\.com|twitter\.com|www\.instagram\.com|pin\.it|vm\.tiktok\.com)[^\s]+/gi;
+    const match = body.match(urlRegex);
+
+    if (!match || match.length === 0) return;
+
+    const videoURL = match[0];
+    output.react("⏳");
+
+    const apiData = await axios.get(
+      "https://raw.githubusercontent.com/romeoislamrasel/romeobot/refs/heads/main/api.json"
+    );
+    const apiUrl = apiData.data.alldl;
+
+    const res = await axios.get(`${apiUrl}/allLink`, {
+      params: { link: videoURL },
+    });
+
+    if (!res.data.download_url) {
+      output.react("❌");
       return;
     }
-    const prompt = String(input);
-    if (
-      prompt.match(/^https:\/\/(www\.)?(facebook\.com|fb\.watch)/)?.length > 0
-    ) {
-      output.react("🔎");
-      const data = await getFbVideoInfo(prompt);
-      let Title = data.title;
-      const emojiMatch = Title.match(/&#x([0-9a-fA-F\-]+);?/);
-      if (emojiMatch) {
-        const hexStr = emojiMatch[1].toUpperCase();
-        const codePoints = hexStr.split("-").map((part) => parseInt(part, 16));
-        const emoji = String.fromCodePoint(...codePoints);
-        Title = Title.replace(emojiMatch[0], emoji);
-      }
-      if (data.hd || data.sd) {
-        output.react("📥");
-        await output.reply({
-          body: `${Title}\nDuration:${formatDuration(data.duration_ms)}`,
-          attachment: await global.utils.getStreamFromURL(data.hd || data.sd),
-        });
-        output.react("✅");
-      } else {
-        output.react("❌");
-      }
-    }
+
+    const { download_url: videoLink, platform, video_title } = res.data;
+
+    const stream = await global.utils.getStreamFromURL(videoLink, "video.mp4");
+
+    await output.reply({
+      body: `Here's your downloaded video:\nPlatform: ${platform}\nTitle: ${video_title}`,
+      attachment: stream,
+    });
+
+    output.react("✅");
   } catch (err) {
+    output.react("❌");
     output.reply(require("util").inspect(err));
   }
 }
