@@ -10,7 +10,7 @@
   "GRADIENT_THEME": "retro",
   "knownURL": "https://cassidyredux.onrender.com",
   "noFB": false,
-  "PREFIX": "#",
+  "PREFIX": ".",
   "LOGO": "",
   "ADMINBOT": ["100075058221244", "YOUR_UID"],
   "EXTRAPREFIX": ["_"],
@@ -19,7 +19,7 @@
   "WEB_PASSWORD": "liaSS-web",
   "discordBotToken": "",
   "discordClientID": "",
-  "pageAccessToken": "",
+  "pageAccessToken": "EAASXvUDMrfEBO9UE9uUveZCrpSZCnbUdWXxzZC48KOEiUZAcNX8uQuYnrZAi6c5Aw6R4uxRtoo8sm3TZCkkunWo2uTwqwx0E6d0bax9wkjTnImMVllhwnzWoDrcrjOCNc0zNaVnqH8U8z24gk5xSa8xidOf7CYlv8wuZBXndcsDew5ZBR9ADWmsNVWtCTVM6PocKPgZDZD",
   "pageVerifyToken": "",
   "mqttRestart": {
     "enabled": true,
