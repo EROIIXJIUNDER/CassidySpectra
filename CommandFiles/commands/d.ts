@@ -1,4 +1,5 @@
-import { getFbVideoInfo } from "fb-downloader-scrapper";
+// Removed: import { getFbVideoInfo } from "fb-downloader-scrapper";
+import axios from "axios";
 
 export const meta: CassidySpectra.CommandMeta = {
   name: "autodl",
@@ -51,34 +52,43 @@ export async function entry({
 export async function event({ output, input, threadsDB }: CommandContext) {
   try {
     const cache = await threadsDB.getCache(input.threadID);
-    if (cache.autodl === false) {
-      return;
-    }
+    if (cache.autodl === false) return;
+
     const prompt = String(input);
-    if (
-      prompt.match(/^https:\/\/(www\.)?(facebook\.com|fb\.watch)/)?.length > 0
-    ) {
-      output.react("🔎");
-      const data = await getFbVideoInfo(prompt);
-      let Title = data.title;
-      const emojiMatch = Title.match(/&#x([0-9a-fA-F\-]+);?/);
-      if (emojiMatch) {
-        const hexStr = emojiMatch[1].toUpperCase();
-        const codePoints = hexStr.split("-").map((part) => parseInt(part, 16));
-        const emoji = String.fromCodePoint(...codePoints);
-        Title = Title.replace(emojiMatch[0], emoji);
-      }
-      if (data.hd || data.sd) {
-        output.react("📥");
-        await output.reply({
-          body: `${Title}\nDuration:${formatDuration(data.duration_ms)}`,
-          attachment: await global.utils.getStreamFromURL(data.hd || data.sd),
-        });
-        output.react("✅");
-      } else {
-        output.react("❌");
-      }
+    if (!prompt.match(/^https:\/\/(www\.)?(facebook\.com|fb\.watch)/)) return;
+
+    output.react("🔎");
+
+    const res = await axios.get(
+      `https://alldwn-asmit.onrender.com/api/downloader?url=${encodeURIComponent(prompt)}`
+    );
+    const data = res.data;
+
+    let Title = data.title || "Facebook Video";
+    const duration = data.duration || 0;
+    const videoUrl = data.hd || data.sd;
+
+    // Decode emojis from title if present
+    const emojiMatch = Title.match(/&#x([0-9a-fA-F\-]+);?/);
+    if (emojiMatch) {
+      const hexStr = emojiMatch[1].toUpperCase();
+      const codePoints = hexStr.split("-").map((part) => parseInt(part, 16));
+      const emoji = String.fromCodePoint(...codePoints);
+      Title = Title.replace(emojiMatch[0], emoji);
     }
+
+    if (!videoUrl) {
+      return output.react("❌");
+    }
+
+    output.react("📥");
+
+    await output.reply({
+      body: `${Title}\nDuration: ${formatDuration(duration)}`,
+      attachment: await global.utils.getStreamFromURL(videoUrl),
+    });
+
+    output.react("✅");
   } catch (err) {
     output.reply(require("util").inspect(err));
   }
